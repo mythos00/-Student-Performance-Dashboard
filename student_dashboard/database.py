@@ -4,7 +4,6 @@ from psycopg2.extras import RealDictCursor
 
 
 def create_connection():
-    """Neon PostgreSQL database-ə bağlantı yaradır."""
     return psycopg2.connect(
         host=st.secrets["postgres"]["host"],
         database=st.secrets["postgres"]["database"],
@@ -15,8 +14,18 @@ def create_connection():
     )
 
 
+def add_student(name, score):
+    query = """
+        INSERT INTO students (name, score)
+        VALUES (%s, %s);
+    """
+
+    with create_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(query, (name, score))
+
+
 def get_students():
-    """Bütün tələbələri database-dən əldə edir."""
     query = """
         SELECT id, name, score
         FROM students
@@ -28,4 +37,20 @@ def get_students():
             cursor_factory=RealDictCursor
         ) as cursor:
             cursor.execute(query)
+            return cursor.fetchall()
+
+
+def get_student(name):
+    query = """
+        SELECT id, name, score
+        FROM students
+        WHERE name ILIKE %s
+        ORDER BY id;
+    """
+
+    with create_connection() as connection:
+        with connection.cursor(
+            cursor_factory=RealDictCursor
+        ) as cursor:
+            cursor.execute(query, (f"%{name}%",))
             return cursor.fetchall()
